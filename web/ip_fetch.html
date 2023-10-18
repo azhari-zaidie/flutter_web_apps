@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>IP Fetch</title>
+</head>
+
+<body>
+    <script>
+        function getLocalIPAddress() {
+            return new Promise((resolve, reject) => {
+                const peerConnection = new RTCPeerConnection({ iceServers: [] });
+                peerConnection.createDataChannel('');
+                peerConnection.createOffer().then((offer) => {
+                    peerConnection.setLocalDescription(offer);
+                });
+
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        const ipAddress = event.candidate.address;
+                        resolve(ipAddress);
+                    }
+                };
+            });
+        }
+    </script>
+
+</body>
+
+</html>
