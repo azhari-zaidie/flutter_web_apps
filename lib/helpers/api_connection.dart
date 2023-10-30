@@ -46,6 +46,9 @@ class API {
 
   static final getDownloadFile = "$hostAPI/";
   // https://erp.inteceng.com.my/${eachDrawing.url!}
+
+  static final getTravellerProcess =
+      "$hostAPI/api/generated-process-traveller?id=";
 }
 
 /*

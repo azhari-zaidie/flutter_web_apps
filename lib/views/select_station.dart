@@ -39,13 +39,13 @@ class _SelectStationScreenState extends State<SelectStationScreen> {
       if (ip.isEmpty) {
         Fluttertoast.showToast(
           msg: "URL cant be empty",
-          timeInSecForIosWeb: 10,
+          timeInSecForIosWeb: 30,
         );
         dialogURL(context);
       } else {
         Fluttertoast.showToast(
           msg: "URL: $ip",
-          timeInSecForIosWeb: 10,
+          timeInSecForIosWeb: 30,
         );
       }
     });

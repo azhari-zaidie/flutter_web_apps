@@ -174,13 +174,24 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
     List<Processtraveller> getProcessTraveller = [];
     //String searchQuery = _searchController.text; // Get the search query
     try {
-      var res = await http.get(
-          Uri.parse(
-              "${API.getWoList}${widget.eachStation!.stationId}&status=$status&page=$page"),
-          headers: {
-            'Content-type': 'application/json',
-            'Accept': 'application/json',
-          });
+      var res;
+      if (status == "SearchComplete" || status == "SearchOnProgress") {
+        res = await http.get(
+            Uri.parse(
+                "${API.getWoList}${widget.eachStation!.stationId}&status=$status&keyword=${_searchController.text}"),
+            headers: {
+              'Content-type': 'application/json',
+              'Accept': 'application/json',
+            });
+      } else {
+        res = await http.get(
+            Uri.parse(
+                "${API.getWoList}${widget.eachStation!.stationId}&status=$status&page=$page"),
+            headers: {
+              'Content-type': 'application/json',
+              'Accept': 'application/json',
+            });
+      }
 
       if (res.statusCode == 200) {
         var responseOfGetProcessTraveller = jsonDecode(res.body);
@@ -194,12 +205,12 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
           print(
               "${API.getWoList}${widget.eachStation!.stationId}&status=$status&page=$currentPage");
           // Filter the data based on the search query
-          if (searchQuery.isNotEmpty) {
-            getProcessTraveller = getProcessTraveller.where((item) {
-              return item.wo_number!.contains(searchQuery
-                  .toLowerCase()); // Adjust this condition to match your data structure
-            }).toList();
-          }
+          // if (searchQuery.isNotEmpty) {
+          //   getProcessTraveller = getProcessTraveller.where((item) {
+          //     return item.wo_number!.contains(searchQuery
+          //         .toLowerCase()); // Adjust this condition to match your data structure
+          //   }).toList();
+          // }
 
           return getProcessTraveller;
         } else {
@@ -267,6 +278,40 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
     } catch (e) {
       print(e);
     }
+  }
+
+  Future<List<ProcessTravellerProcess>> getGeneratedProcessTraveller(
+      String? wo_id) async {
+    List<ProcessTravellerProcess> process = [];
+    //List<String> test = [];
+    try {
+      var res = await http.get(
+        Uri.parse("${API.getTravellerProcess}$wo_id"),
+        headers: {
+          'Content-type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (res.statusCode == 200) {
+        var responseOfDrawing = jsonDecode(res.body);
+        if (responseOfDrawing['success'] == true) {
+          (responseOfDrawing['processTravellers'] as List).forEach((element) {
+            process.add(ProcessTravellerProcess.fromJson(element));
+          });
+          //print(bomProcessId);
+        } else {
+          print("drawing sana");
+        }
+      } else {
+        print("drawing sini");
+      }
+    } catch (e) {
+      print(e);
+      print("drawing sini");
+    }
+
+    return process;
   }
 
   addProgressRecord(int id) async {
@@ -382,7 +427,7 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
                   },
                   icon: Icon(Icons.qr_code),
                   label: Text(
-                    'Scan WO & Bypass Process',
+                    'Scan WO',
                     style: TextStyle(
                       color: Colors.black,
                     ),
@@ -423,13 +468,19 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
             //create
           ],
         ),
+        leading: BackButton(
+          onPressed: () {
+            Get.toNamed("/listOfStation");
+          },
+          color: Colors.white,
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             Text(
-              "Task List",
+              widget.eachStation!.name!,
               style: TextStyle(
                 color: Colors.black,
                 fontSize: 24,
@@ -448,17 +499,24 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      labelText: 'Search',
+                      labelText: 'Search by WO NUMBER',
                       border: OutlineInputBorder(),
                     ),
-                    onChanged: (value) {
-                      // Trigger search when the user types in the search field
-                      setState(() {
-                        searchQuery = value; // Update the searchQuery variable
-                      });
-                    },
                   ),
                 ),
+                ElevatedButton(
+                    onPressed: () {
+                      if (_selectedIndex == 0) {
+                        setState(() {
+                          status = "SearchOnProgress";
+                        });
+                      } else {
+                        setState(() {
+                          status = "SearchComplete";
+                        });
+                      }
+                    },
+                    child: Text("Search")),
                 Spacer(),
                 ElevatedButton(
                   onPressed: () {
@@ -821,6 +879,12 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
                                       child: IconButton(
                                         onPressed: () {
                                           // Your onPressed function here
+                                          Get.dialog(dialogProcess(
+                                              context,
+                                              "Generated Process Traveller",
+                                              eachProcessTraveller[index]
+                                                  .woId
+                                                  .toString()));
                                         },
                                         icon: Icon(
                                             Icons.add_photo_alternate_outlined),
@@ -832,10 +896,7 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
                                   onPressed: () {
                                     //skip current process
                                     Get.dialog(dialogActionSkipProcess(
-                                        context,
-                                        eachProcessTraveller[index]
-                                            .woId
-                                            .toString()));
+                                        context, eachProcessTraveller[index]));
                                   },
                                   child: Text("Skipp Process"),
                                 ),
@@ -1126,7 +1187,7 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
                                                   height:
                                                       100.0, // Adjust the height as needed
                                                 ),
-                                                Padding(
+                                                const Padding(
                                                   padding: const EdgeInsets.all(
                                                       16.0),
                                                   child: Text(
@@ -1138,7 +1199,7 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
                                                     ),
                                                   ),
                                                 ),
-                                                Padding(
+                                                const Padding(
                                                   padding:
                                                       const EdgeInsets.only(
                                                           left: 16.0,
@@ -1170,7 +1231,7 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
                                                         // Navigator.pop(context,
                                                         //     "YesContinue");
                                                       },
-                                                      child: Text(
+                                                      child: const Text(
                                                         "Yes",
                                                         style: TextStyle(
                                                           color: Colors.black,
@@ -1182,7 +1243,7 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
                                                       onPressed: () {
                                                         Navigator.pop(context);
                                                       },
-                                                      child: Text(
+                                                      child: const Text(
                                                         "No",
                                                         style: TextStyle(
                                                           color: Colors.black,
@@ -1213,7 +1274,7 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
           );
         } else {
           return const Center(
-            child: Text("No Record Found"),
+            child: Text("Empty, no data"),
           );
         }
       },
@@ -1497,6 +1558,12 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
                                       child: IconButton(
                                         onPressed: () {
                                           // Your onPressed function here
+                                          Get.dialog(dialogProcess(
+                                              context,
+                                              "Generated Process Traveller",
+                                              eachProcessTraveller[index]
+                                                  .woId
+                                                  .toString()));
                                         },
                                         icon: Icon(
                                             Icons.add_photo_alternate_outlined),
@@ -1552,7 +1619,7 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
           );
         } else {
           return const Center(
-            child: Text("No Record Found"),
+            child: Text("Empty, no data"),
           );
         }
       },
@@ -1677,13 +1744,373 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
               );
             } else {
               return const Center(
-                child: Text("No Record Found"),
+                child: Text("Empty, no data."),
               );
             }
           },
         ),
       ),
     );
+  }
+
+  Widget dialogProcess(BuildContext context, String action, String wo_id) {
+    return AlertDialog(
+      title: Text(action),
+      content: Container(
+        width: MediaQuery.of(context).size.width * 1,
+        child: FutureBuilder(
+          future: getGeneratedProcessTraveller(wo_id),
+          builder: (context,
+              AsyncSnapshot<List<ProcessTravellerProcess>> dataSnapShot) {
+            if (dataSnapShot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Connection Waiting...",
+                      style: TextStyle(
+                        color: Colors.grey,
+                      ),
+                    ),
+                    CircularProgressIndicator(),
+                  ],
+                ),
+              );
+            }
+            if (dataSnapShot.data == null) {
+              return const Center(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Finding the record...",
+                      style: TextStyle(
+                        color: Colors.grey,
+                      ),
+                    ),
+                    CircularProgressIndicator(),
+                  ],
+                ),
+              );
+            }
+
+            if (dataSnapShot.data!.isNotEmpty) {
+              return SingleChildScrollView(
+                child: DataTable(
+                  border: const TableBorder(
+                    top: BorderSide(color: Colors.grey, width: 0.5),
+                    bottom: BorderSide(color: Colors.grey, width: 0.5),
+                    left: BorderSide(color: Colors.grey, width: 0.5),
+                    right: BorderSide(color: Colors.grey, width: 0.5),
+                    horizontalInside:
+                        BorderSide(color: Colors.grey, width: 0.5),
+                    verticalInside: BorderSide(color: Colors.grey, width: 0.5),
+                  ),
+                  columns: const [
+                    DataColumn(
+                      label: Expanded(
+                          child: Center(
+                              child: Text(
+                        '#',
+                        textAlign: TextAlign.center,
+                      ))),
+                    ),
+                    DataColumn(
+                      label: Expanded(
+                          child: Center(
+                              child: Text(
+                        'Process Name',
+                        textAlign: TextAlign.center,
+                      ))),
+                    ),
+                    DataColumn(
+                      label: Expanded(
+                          child: Center(
+                              child: Text(
+                        'Finished Qty',
+                        textAlign: TextAlign.center,
+                      ))),
+                    ),
+                    DataColumn(
+                      label: Expanded(
+                          child: Center(
+                              child: Text(
+                        'Remark',
+                        textAlign: TextAlign.center,
+                      ))),
+                    ),
+                    DataColumn(
+                      label: Expanded(
+                          child: Center(
+                              child: Text(
+                        'Status',
+                        textAlign: TextAlign.center,
+                      ))),
+                    ),
+                    DataColumn(
+                      label: Expanded(
+                          child: Center(
+                              child: Text(
+                        'Location',
+                        textAlign: TextAlign.center,
+                      ))),
+                    ),
+                    DataColumn(
+                      label: Expanded(
+                          child: Center(
+                              child: Text(
+                        'Sequence',
+                        textAlign: TextAlign.center,
+                      ))),
+                    ),
+                  ],
+                  rows:
+                      dataSnapShot.data!.asMap().entries.map<DataRow>((entry) {
+                    final index = entry.key + 1;
+                    final eachProcess = entry.value;
+                    var remark;
+                    int changeRemark = 0;
+                    if (eachProcess.rejectedQuantity == "-") {
+                      if (eachProcess.remark != "Repacking") {
+                        remark = eachProcess.remark.toString();
+                        changeRemark = 0;
+                      } else {
+                        changeRemark = 1;
+                        remark = RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'Skipped process by ',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                              TextSpan(
+                                text: eachProcess.skippedBy,
+                                style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              TextSpan(
+                                text: ' on ',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                              TextSpan(
+                                text: eachProcess.skippedOn,
+                                style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              TextSpan(
+                                text: "\nReason: ${eachProcess.remark}",
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    } else {
+                      if (eachProcess.remark == "-") {
+                        changeRemark = 0;
+                        remark =
+                            "${eachProcess.rejectedQuantity} Not received from Previous Process";
+                      } else {
+                        changeRemark = 0;
+                        remark =
+                            "${eachProcess.rejectedQuantity} ${eachProcess.remark} in ${eachProcess.rejectedProcessName}";
+                      }
+                    }
+                    return DataRow(
+                      cells: [
+                        DataCell(
+                          Expanded(
+                              child: Center(
+                                  child: Text(
+                            index.toString(),
+                            textAlign: TextAlign.center,
+                          ))),
+                        ),
+                        DataCell(Text(
+                          eachProcess.processName!,
+                          maxLines: 2,
+                        )),
+                        DataCell(
+                          Expanded(
+                              child: Center(
+                                  child: Text(
+                            "${eachProcess.finishedQuantity!.toString()}/${eachProcess.orderQuantity!.toString()} ",
+                            textAlign: TextAlign.center,
+                          ))),
+                        ),
+                        DataCell((changeRemark == 0)
+                            ? Text(
+                                remark,
+                                maxLines: 2,
+                              )
+                            : remark),
+                        DataCell(
+                          Expanded(
+                              child: Center(
+                                  child: button(
+                                      BuildContext, eachProcess.status!))),
+                        ),
+                        DataCell(Text(
+                          eachProcess.location!,
+                          maxLines: 2,
+                        )),
+                        DataCell(
+                          Expanded(
+                              child: Center(
+                                  child: Text(
+                            eachProcess.sequence!.toString(),
+                            textAlign: TextAlign.center,
+                          ))),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              );
+            } else {
+              return Center(
+                child: Text("Empty, no data"),
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget button(BuildContext, int i) {
+    return (i == 0)
+        ? ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.blue, // Set the text color to white
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16), // Adjust padding as needed
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                    4), // Adjust the border radius as needed
+              ),
+            ),
+            onPressed: () {
+              // Add your onPressed callback here
+            },
+            child: const Text(
+              "Initialized",
+              style: TextStyle(fontSize: 14), // Adjust the font size as needed
+            ),
+          )
+        : (i == 1)
+            ? ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.yellow, // Set the text color to white
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16), // Adjust padding as needed
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                        4), // Adjust the border radius as needed
+                  ),
+                ),
+                onPressed: () {
+                  // Add your onPressed callback here
+                },
+                child: const Text(
+                  "On Progress",
+                  style:
+                      TextStyle(fontSize: 14), // Adjust the font size as needed
+                ),
+              )
+            : (i == 2)
+                ? ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor:
+                          Colors.green, // Set the text color to white
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16), // Adjust padding as needed
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                            4), // Adjust the border radius as needed
+                      ),
+                    ),
+                    onPressed: () {
+                      // Add your onPressed callback here
+                    },
+                    child: const Text(
+                      "Complete",
+                      style: TextStyle(
+                          fontSize: 14), // Adjust the font size as needed
+                    ),
+                  )
+                : (i == 3)
+                    ? ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor:
+                              Colors.yellow, // Set the text color to white
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16), // Adjust padding as needed
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                                4), // Adjust the border radius as needed
+                          ),
+                        ),
+                        onPressed: () {
+                          // Add your onPressed callback here
+                        },
+                        child: const Text(
+                          "Extra Quantity",
+                          style: TextStyle(
+                              fontSize: 14), // Adjust the font size as needed
+                        ),
+                      )
+                    : (i == 4)
+                        ? ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor:
+                                  Colors.yellow, // Set the text color to white
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16), // Adjust padding as needed
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                    4), // Adjust the border radius as needed
+                              ),
+                            ),
+                            onPressed: () {
+                              // Add your onPressed callback here
+                            },
+                            child: const Text(
+                              "Partial",
+                              style: TextStyle(
+                                  fontSize:
+                                      14), // Adjust the font size as needed
+                            ),
+                          )
+                        : ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor:
+                                  Colors.red, // Set the text color to white
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16), // Adjust padding as needed
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                    4), // Adjust the border radius as needed
+                              ),
+                            ),
+                            onPressed: () {
+                              // Add your onPressed callback here
+                            },
+                            child: const Text(
+                              "Unintialized",
+                              style: TextStyle(
+                                  fontSize:
+                                      14), // Adjust the font size as needed
+                            ),
+                          );
   }
 
   Widget dialogQuantity(BuildContext context, int id) {
@@ -1724,7 +2151,8 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
     );
   }
 
-  Widget dialogActionSkipProcess(BuildContext context, String? wo_id) {
+  Widget dialogActionSkipProcess(
+      BuildContext context, Processtraveller traveller) {
     return AlertDialog(
       title: Text("Process Skipping"),
       content: Container(
@@ -1732,7 +2160,8 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
         child: Column(
           mainAxisSize: MainAxisSize.min, // Set the size to min
           children: [
-            Text("Are you want skip all process and current process?"),
+            Text("Are you want skip current process?"),
+            Text("Quantity: ${traveller.workOrder!.quantity.toString()}"),
             TextField(
               keyboardType: TextInputType.number,
               onChanged: _textEditingController.skipProcessQuantity,
@@ -1768,20 +2197,25 @@ class _DetailsWorkOrderState extends State<DetailsWorkOrder> {
               },
             ),
 
-            ElevatedButton(
-              onPressed: () {
-                if (_textEditingController.hasError.value) {
-                  // Handle the error (e.g., display an error message)
-                  print("Error: Field is empty");
-                } else {
-                  print("Entered Text: ${_textEditingController.reason.value}");
-                  Get.back();
-                  updateSkipCurrentProcess(wo_id!);
-                }
-                //print("Entered Text: ${_textEditingController.reason.value}");
-              },
-              child: Text("Submit"),
+            SizedBox(
+              height: 10,
             ),
+
+            Obx(() {
+              return ElevatedButton(
+                onPressed: _textEditingController.hasError.value ||
+                        _textEditingController.errorText.value.isNotEmpty
+                    ? null
+                    : () {
+                        print(
+                            "Entered Text: ${_textEditingController.reason.value}");
+                        Get.back();
+                        updateSkipCurrentProcess(traveller.woId!.toString());
+                        // Handle your logic here
+                      },
+                child: Text("Submit"),
+              );
+            }),
           ],
         ),
       ),

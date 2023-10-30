@@ -53,12 +53,14 @@ class _ScanProcessScreenState extends State<ScanProcessScreen> {
         body: {
           'wo_id': woID,
           'station_id': widget.eachStation!.stationId.toString(),
+          'staff_id': _currentUser!.staff_id.toString(),
         },
       );
 
       if (resCheckStation.statusCode == 200) {
         var responseOfGetProcessTraveller = jsonDecode(resCheckStation.body);
         if (responseOfGetProcessTraveller["success"] == true) {
+          print("sini");
           // (responseOfGetProcessTraveller["processtraveller"] as List)
           //     .forEach((element) {
           //   getProcessTraveller.add(Processtraveller.fromJson(element));
@@ -170,6 +172,8 @@ class _ScanProcessScreenState extends State<ScanProcessScreen> {
           print(responseOfGetProcessTraveller["success"] == true);
           Fluttertoast.showToast(msg: "Invalid");
         }
+      } else {
+        print(widget.eachStation!.stationId.toString());
       }
     } catch (e) {
       print(e);
@@ -355,34 +359,34 @@ class _ScanProcessScreenState extends State<ScanProcessScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(
-                      width: 10,
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        _qrBarCodeScannerDialogPlugin.getScannedQrBarCode(
-                            context: context,
-                            onCode: (code) async {
-                              // Split the string by spaces and get the last part
-                              List<String> parts = code!.split(' ');
-                              String codeNew = parts.last;
+                    // SizedBox(
+                    //   width: 10,
+                    // ),
+                    // ElevatedButton.icon(
+                    //   onPressed: () {
+                    //     _qrBarCodeScannerDialogPlugin.getScannedQrBarCode(
+                    //         context: context,
+                    //         onCode: (code) async {
+                    //           // Split the string by spaces and get the last part
+                    //           List<String> parts = code!.split(' ');
+                    //           String codeNew = parts.last;
 
-                              // Convert the extracted part to an integer
-                              //Stro? codeNumber = int.tryParse(codeNew);
+                    //           // Convert the extracted part to an integer
+                    //           //Stro? codeNumber = int.tryParse(codeNew);
 
-                              print("WO scanned: $codeNew");
-                              //staffProvider.fetchStaffInfo(codeNew);
-                              Get.dialog(dialogAction(context, codeNew));
-                            });
-                      },
-                      icon: Icon(Icons.qr_code),
-                      label: Text(
-                        'ByPass Process',
-                        style: TextStyle(
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
+                    //           print("WO scanned: $codeNew");
+                    //           //staffProvider.fetchStaffInfo(codeNew);
+                    //           Get.dialog(dialogAction(context, codeNew));
+                    //         });
+                    //   },
+                    //   icon: Icon(Icons.qr_code),
+                    //   label: Text(
+                    //     'ByPass Process',
+                    //     style: TextStyle(
+                    //       color: Colors.black,
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 )
               ],

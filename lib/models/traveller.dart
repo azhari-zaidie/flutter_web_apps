@@ -18,6 +18,12 @@ class Processtraveller {
   int? status;
   String? ioquantity;
   String? wo_number;
+  String? process_name;
+  String? rejected_process_name;
+  String? finished_quantity;
+  String? skipped_by;
+  String? skipped_on;
+  String? location;
   WorkOrder? workOrder;
   List<WoProcessProgressAll> woProcessProgressAll;
 
@@ -40,6 +46,12 @@ class Processtraveller {
     required this.woProcessProgressAll,
     this.ioquantity,
     this.wo_number,
+    this.finished_quantity,
+    this.location,
+    this.process_name,
+    this.rejected_process_name,
+    this.skipped_by,
+    this.skipped_on,
   });
 
   factory Processtraveller.fromJson(Map<String, dynamic> json) =>
@@ -63,7 +75,13 @@ class Processtraveller {
             .map((featureJson) => WoProcessProgressAll.fromJson(featureJson))
             .toList(),
         ioquantity: json["ioquantity"],
+        finished_quantity: json["finished_quantity"],
+        location: json["location"],
+        process_name: json["process_name"],
         wo_number: json["wo_number"],
+        rejected_process_name: json["rejected_process_name"],
+        skipped_by: json["skipped_by"],
+        skipped_on: json["skipped_on"],
         // woProcessProgressAll: json["wo_process_progress_all"] != null
         //     ? List<WoProcessProgressAll>.from(json["wo_process_progress_all"]
         //         .map((x) => WoProcessProgressAll.fromJson(x)))
@@ -87,4 +105,47 @@ class Processtraveller {
         "status": status,
         "work_order": workOrder!.toJson(),
       };
+}
+
+class ProcessTravellerProcess {
+  int? sequence;
+  String? rejectedQuantity;
+  String? remark;
+  int? status;
+  String? processName;
+  String? rejectedProcessName;
+  int? orderQuantity;
+  int? finishedQuantity;
+  String? skippedBy;
+  String? skippedOn;
+  String? location;
+
+  ProcessTravellerProcess({
+    this.sequence,
+    this.rejectedQuantity,
+    this.remark,
+    this.status,
+    this.processName,
+    this.rejectedProcessName,
+    this.orderQuantity,
+    this.finishedQuantity,
+    this.skippedBy,
+    this.skippedOn,
+    this.location,
+  });
+
+  factory ProcessTravellerProcess.fromJson(Map<String, dynamic> json) =>
+      ProcessTravellerProcess(
+        sequence: json["sequence"],
+        rejectedQuantity: json["rejected_quantity"] ?? "-",
+        remark: json["remark"] ?? "-",
+        status: json["status"] ?? 5,
+        processName: json["process_name"] ?? "-",
+        orderQuantity: json["order_quantity"],
+        rejectedProcessName: json["rejectedProcessName"],
+        finishedQuantity: json["finished_quantity"] ?? 0,
+        skippedBy: json["skipped_by"] ?? "Relation Lost",
+        skippedOn: json["skipped_on"] ?? "Relation Lost",
+        location: json["location"] ?? "Relation Lost",
+      );
 }

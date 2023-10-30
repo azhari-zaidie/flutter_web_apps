@@ -313,7 +313,7 @@ class _ListOFStationScreenState extends State<ListOFStationScreen> {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(20),
-              child: Text("Empty, No Data"),
+              child: Text("Lost Connection, refresh."),
             ),
           );
         }
